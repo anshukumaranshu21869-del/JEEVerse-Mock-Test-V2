@@ -682,7 +682,6 @@ const questions = [
     explanation: "The common element of A and B is 3."
   },
   {
-    {
     id: "M02",
     subject: "Mathematics",
     chapter: "Relations and Functions",
