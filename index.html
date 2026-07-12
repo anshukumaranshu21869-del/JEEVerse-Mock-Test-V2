@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
+
+  <meta
+    name="description"
+    content="JEEVerse Pro - Professional JEE Main CBT mock test platform"
+  />
+
+  <title>JEEVerse Pro | JEE Main Mock Test</title>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- =========================
+       LOADING SCREEN
+  ========================== -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loader-logo">J</div>
+
+    <h2>JEEVerse Pro</h2>
+
+    <div class="loader-line">
+      <span></span>
+    </div>
+
+    <p>Preparing your examination...</p>
+  </div>
+
+
+  <!-- =========================
+       INSTRUCTIONS SCREEN
+  ========================== -->
+  <section id="instructionsScreen" class="instructions-screen hidden">
+
+    <div class="instructions-wrapper">
+
+      <div class="instructions-brand">
+
+        <div class="brand-logo large-logo">
+          JV
+        </div>
+
+        <div>
+          <h1>JEEVerse Pro</h1>
+          <p>Professional JEE Main Mock Test Platform</p>
+        </div>
+
+      </div>
+
+
+      <div class="instructions-layout">
+
+        <div class="instructions-main-card">
+
+          <div class="instruction-heading">
+
+            <span class="instruction-badge">
+              JEE MAIN 2027
+            </span>
+
+            <h2>Full Syllabus Mock Test</h2>
+
+            <p>
+              Read all instructions carefully before starting the examination.
+            </p>
+
+          </div>
+
+
+          <div class="exam-information-grid">
+
+            <div class="exam-info-card">
+              <span class="info-icon">⏱</span>
+
+              <div>
+                <strong>180 Minutes</strong>
+                <small>Test Duration</small>
+              </div>
+            </div>
+
+
+            <div class="exam-info-card">
+              <span class="info-icon">📝</span>
+
+              <div>
+                <strong>75 Questions</strong>
+                <small>Total Questions</small>
+              </div>
+            </div>
+
+
+            <div class="exam-info-card">
+              <span class="info-icon">🏆</span>
+
+              <div>
+                <strong>300 Marks</strong>
+                <small>Maximum Marks</small>
+              </div>
+            </div>
+
+
+            <div class="exam-info-card">
+              <span class="info-icon">📚</span>
+
+              <div>
+                <strong>3 Subjects</strong>
+                <small>PCM Full Syllabus</small>
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="instructions-content">
+
+            <h3>General Instructions</h3>
+
+            <ol>
+
+              <li>
+                The examination consists of Physics, Chemistry and Mathematics.
+              </li>
+
+              <li>
+                Each subject contains multiple-choice and numerical-value
+                questions.
+              </li>
+
+              <li>
+                Each correct response carries
+                <strong>+4 marks</strong>.
+              </li>
+
+              <li>
+                An incorrect MCQ response carries
+                <strong>-1 mark</strong>.
+              </li>
+
+              <li>
+                Unattempted questions carry zero marks.
+              </li>
+
+              <li>
+                The test will be submitted automatically when the timer reaches
+                zero.
+              </li>
+
+              <li>
+                Use the Question Palette to move between different questions.
+              </li>
+
+              <li>
+                Use “Mark for Review & Next” to revisit a question later.
+              </li>
+
+              <li>
+                Do not refresh, close or leave the page during the examination.
+              </li>
+
+            </ol>
+
+
+            <div class="palette-instructions">
+
+              <h3>Question Status</h3>
+
+              <div class="palette-guide-grid">
+
+                <div class="palette-guide">
+                  <span class="status-shape not-visited"></span>
+                  <p>Not Visited</p>
+                </div>
+
+                <div class="palette-guide">
+                  <span class="status-shape not-answered"></span>
+                  <p>Not Answered</p>
+                </div>
+
+                <div class="palette-guide">
+                  <span class="status-shape answered"></span>
+                  <p>Answered</p>
+                </div>
+
+                <div class="palette-guide">
+                  <span class="status-shape reviewed"></span>
+                  <p>Marked for Review</p>
+                </div>
+
+                <div class="palette-guide">
+                  <span class="status-shape answered-reviewed"></span>
+                  <p>Answered & Reviewed</p>
+                </div>
+
+                <div class="palette-guide">
+                  <span class="status-shape current"></span>
+                  <p>Current Question</p>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="agreement-section">
+
+            <label class="agreement-label">
+
+              <input
+                type="checkbox"
+                id="agreementCheckbox"
+              />
+
+              <span class="custom-checkbox"></span>
+
+              <span>
+                I have read and understood all examination instructions.
+              </span>
+
+            </label>
+
+          </div>
+
+
+          <button
+            id="startTestBtn"
+            class="start-test-btn"
+            type="button"
+            disabled
+          >
+            Start Examination
+          </button>
+
+        </div>
+
+
+        <aside class="candidate-preview-card">
+
+          <div class="candidate-avatar">
+            A
+          </div>
+
+          <h3>JEE Aspirant</h3>
+
+          <p>Candidate ID: JVP-2027-001</p>
+
+
+          <div class="candidate-preview-details">
+
+            <div>
+              <span>Exam</span>
+              <strong>JEE Main</strong>
+            </div>
+
+            <div>
+              <span>Language</span>
+              <strong>English</strong>
+            </div>
+
+            <div>
+              <span>Mode</span>
+              <strong>Computer Based Test</strong>
+            </div>
+
+          </div>
+
+        </aside>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =========================
+       MAIN EXAM APPLICATION
+  ========================== -->
+  <div id="examApp" class="exam-app hidden">
+
+    <!-- TOP HEADER -->
+    <header class="exam-header">
+
+      <div class="header-brand">
+
+        <div class="brand-logo">
+          JV
+        </div>
+
+        <div class="brand-text">
+          <h1>JEEVerse Pro</h1>
+          <p>JEE Main Full Syllabus Mock Test</p>
+        </div>
+
+      </div>
+
+
+      <div class="header-center">
+
+        <div class="exam-session-info">
+          <span>JEE Main 2027</span>
+          <strong>Mock Test 01</strong>
+        </div>
+
+      </div>
+
+
+      <div class="header-actions">
+
+        <button
+          id="calculatorBtn"
+          class="header-icon-btn"
+          type="button"
+          aria-label="Open Calculator"
+        >
+          🧮
+        </button>
+
+
+        <button
+          id="fullscreenBtn"
+          class="header-icon-btn"
+          type="button"
+          aria-label="Toggle Fullscreen"
+        >
+          ⛶
+        </button>
+
+
+        <div class="timer-container">
+
+          <span class="timer-label">
+            Time Left
+          </span>
+
+          <strong id="timer">
+            03:00:00
+          </strong>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- MOBILE EXAM TOOLBAR -->
+    <div class="mobile-exam-toolbar">
+
+      <button
+        id="mobilePaletteBtn"
+        class="mobile-toolbar-btn"
+        type="button"
+      >
+        Questions
+      </button>
+
+
+      <div class="mobile-timer">
+        <span>Time</span>
+        <strong id="mobileTimer">03:00:00</strong>
+      </div>
+
+
+      <button
+        id="mobileSubmitBtn"
+        class="mobile-toolbar-btn danger"
+        type="button"
+      >
+        Submit
+      </button>
+
+    </div>
+
+
+    <!-- MAIN LAYOUT -->
+    <main class="exam-layout">
+
+      <!-- LEFT EXAM PANEL -->
+      <section class="question-area">
+
+        <!-- SUBJECT TABS -->
+        <div class="subject-tabs" id="subjectTabs">
+
+          <button
+            class="subject-tab active"
+            data-subject="Physics"
+            type="button"
+          >
+            <span class="subject-name">Physics</span>
+            <small id="physicsProgress">0 / 25</small>
+          </button>
+
+
+          <button
+            class="subject-tab"
+            data-subject="Chemistry"
+            type="button"
+          >
+            <span class="subject-name">Chemistry</span>
+            <small id="chemistryProgress">0 / 25</small>
+          </button>
+
+
+          <button
+            class="subject-tab"
+            data-subject="Mathematics"
+            type="button"
+          >
+            <span class="subject-name">Mathematics</span>
+            <small id="mathematicsProgress">0 / 25</small>
+          </button>
+
+        </div>
+
+
+        <!-- QUESTION HEADER -->
+        <div class="question-header">
+
+          <div class="question-heading">
+
+            <span id="questionNumber">
+              Question 1
+            </span>
+
+            <span
+              id="questionType"
+              class="question-type-badge"
+            >
+              Single Correct MCQ
+            </span>
+
+            <span
+              id="questionDifficulty"
+              class="difficulty-badge medium"
+            >
+              Medium
+            </span>
+
+          </div>
+
+
+          <div class="question-tools">
+
+            <button
+              id="bookmarkBtn"
+              class="question-tool-btn"
+              type="button"
+            >
+              ♡ Bookmark
+            </button>
+
+
+            <button
+              id="reportBtn"
+              class="question-tool-btn report"
+              type="button"
+            >
+              ⚑ Report Question
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- QUESTION CONTENT -->
+        <article class="question-card">
+
+          <div class="question-chapter-row">
+
+            <span>
+              Chapter:
+              <strong id="chapterName">Kinematics</strong>
+            </span>
+
+            <span>
+              Marks:
+              <strong>+4 / -1</strong>
+            </span>
+
+          </div>
+
+
+          <div
+            id="questionText"
+            class="question-text"
+          >
+            Loading question...
+          </div>
+
+
+          <div
+            id="questionImageContainer"
+            class="question-image-container hidden"
+          >
+            <img
+              id="questionImage"
+              src=""
+              alt="Question diagram"
+            />
+          </div>
+
+
+          <div
+            id="options"
+            class="options-container"
+          ></div>
+
+
+          <div
+            id="numericalAnswerBox"
+            class="numerical-answer-box hidden"
+          >
+
+            <label for="numericalInput">
+              Enter your numerical answer
+            </label>
+
+            <input
+              type="text"
+              id="numericalInput"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="Type answer here"
+            />
+
+            <small>
+              Enter the answer up to the required decimal places.
+            </small>
+
+          </div>
+
+        </article>
+
+
+        <!-- ACTION FOOTER -->
+        <footer class="question-actions">
+
+          <div class="action-group left-actions">
+
+            <button
+              id="previousBtn"
+              class="action-btn secondary"
+              type="button"
+            >
+              ← Previous
+            </button>
+
+
+            <button
+              id="clearBtn"
+              class="action-btn light"
+              type="button"
+            >
+              Clear Response
+            </button>
+
+          </div>
+
+
+          <div class="action-group right-actions">
+
+            <button
+              id="reviewBtn"
+              class="action-btn review"
+              type="button"
+            >
+              Mark for Review & Next
+            </button>
+
+
+            <button
+              id="saveBtn"
+              class="action-btn primary"
+              type="button"
+            >
+              Save & Next →
+            </button>
+
+          </div>
+
+        </footer>
+
+      </section>
+
+
+      <!-- RIGHT SIDEBAR -->
+      <aside
+        id="examSidebar"
+        class="exam-sidebar"
+      >
+
+        <button
+          id="closeSidebarBtn"
+          class="close-sidebar-btn"
+          type="button"
+        >
+          ×
+        </button>
+
+
+        <!-- CANDIDATE CARD -->
+        <div class="candidate-card">
+
+          <div class="candidate-profile">
+
+            <div class="candidate-avatar small">
+              A
+            </div>
+
+            <div>
+              <h3>JEE Aspirant</h3>
+              <p>Candidate ID: JVP-2027-001</p>
+            </div>
+
+          </div>
+
+
+          <div class="exam-completion">
+
+            <div class="completion-text">
+              <span>Test Progress</span>
+              <strong id="overallProgressText">0%</strong>
+            </div>
+
+            <div class="completion-bar">
+              <span id="overallProgressBar"></span>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- STATUS SUMMARY -->
+        <div class="status-summary">
+
+          <div class="summary-item answered-summary">
+            <span id="answeredCount">0</span>
+            <small>Answered</small>
+          </div>
+
+          <div class="summary-item unanswered-summary">
+            <span id="notAnsweredCount">0</span>
+            <small>Not Answered</small>
+          </div>
+
+          <div class="summary-item review-summary">
+            <span id="reviewCount">0</span>
+            <small>For Review</small>
+          </div>
+
+          <div class="summary-item unvisited-summary">
+            <span id="notVisitedCount">75</span>
+            <small>Not Visited</small>
+          </div>
+
+        </div>
+
+
+        <!-- PALETTE HEADER -->
+        <div class="palette-header">
+
+          <div>
+            <h2>Question Palette</h2>
+            <p id="paletteSubjectName">Physics</p>
+          </div>
+
+
+          <button
+            id="paletteFilterBtn"
+            class="palette-filter-btn"
+            type="button"
+          >
+            Filter
+          </button>
+
+        </div>
+
+
+        <!-- QUESTION PALETTE -->
+        <div
+          id="questionPalette"
+          class="question-palette"
+        ></div>
+
+
+        <!-- STATUS LEGEND -->
+        <div class="palette-legend compact">
+
+          <div>
+            <span class="legend-box answered"></span>
+            Answered
+          </div>
+
+          <div>
+            <span class="legend-box not-answered"></span>
+            Not Answered
+          </div>
+
+          <div>
+            <span class="legend-box reviewed"></span>
+            Review
+          </div>
+
+          <div>
+            <span class="legend-box current"></span>
+            Current
+          </div>
+
+        </div>
+
+
+        <!-- SUBMIT -->
+        <button
+          id="submitBtn"
+          class="submit-test-btn"
+          type="button"
+        >
+          Submit Test
+        </button>
+
+      </aside>
+
+    </main>
+
+  </div>
+
+
+  <!-- =========================
+       CALCULATOR MODAL
+  ========================== -->
+  <div
+    id="calculatorModal"
+    class="modal-overlay hidden"
+  >
+
+    <div class="calculator-modal">
+
+      <div class="modal-header">
+
+        <h2>Scientific Calculator</h2>
+
+        <button
+          id="closeCalculatorBtn"
+          class="close-modal-btn"
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <input
+        type="text"
+        id="calculatorDisplay"
+        class="calculator-display"
+        readonly
+        value="0"
+      />
+
+
+      <div
+        id="calculatorKeys"
+        class="calculator-keys"
+      >
+
+        <button data-value="clear" type="button">AC</button>
+        <button data-value="backspace" type="button">⌫</button>
+        <button data-value="(" type="button">(</button>
+        <button data-value=")" type="button">)</button>
+
+        <button data-value="sin(" type="button">sin</button>
+        <button data-value="cos(" type="button">cos</button>
+        <button data-value="tan(" type="button">tan</button>
+        <button data-value="/" type="button">÷</button>
+
+        <button data-value="7" type="button">7</button>
+        <button data-value="8" type="button">8</button>
+        <button data-value="9" type="button">9</button>
+        <button data-value="*" type="button">×</button>
+
+        <button data-value="4" type="button">4</button>
+        <button data-value="5" type="button">5</button>
+        <button data-value="6" type="button">6</button>
+        <button data-value="-" type="button">−</button>
+
+        <button data-value="1" type="button">1</button>
+        <button data-value="2" type="button">2</button>
+        <button data-value="3" type="button">3</button>
+        <button data-value="+" type="button">+</button>
+
+        <button data-value="sqrt(" type="button">√</button>
+        <button data-value="0" type="button">0</button>
+        <button data-value="." type="button">.</button>
+        <button
+          data-value="calculate"
+          class="calculate-key"
+          type="button"
+        >
+          =
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       SUBMIT CONFIRMATION MODAL
+  ========================== -->
+  <div
+    id="submitModal"
+    class="modal-overlay hidden"
+  >
+
+    <div class="confirmation-modal">
+
+      <div class="confirmation-icon">
+        !
+      </div>
+
+      <h2>Submit Examination?</h2>
+
+      <p>
+        Once submitted, you will not be able to modify your responses.
+      </p>
+
+
+      <div class="submission-summary">
+
+        <div>
+          <span>Answered</span>
+          <strong id="modalAnsweredCount">0</strong>
+        </div>
+
+        <div>
+          <span>Unanswered</span>
+          <strong id="modalUnansweredCount">75</strong>
+        </div>
+
+        <div>
+          <span>Marked for Review</span>
+          <strong id="modalReviewCount">0</strong>
+        </div>
+
+      </div>
+
+
+      <div class="modal-actions">
+
+        <button
+          id="cancelSubmitBtn"
+          class="modal-btn secondary"
+          type="button"
+        >
+          Continue Test
+        </button>
+
+
+        <button
+          id="confirmSubmitBtn"
+          class="modal-btn danger"
+          type="button"
+        >
+          Submit Test
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       REPORT QUESTION MODAL
+  ========================== -->
+  <div
+    id="reportModal"
+    class="modal-overlay hidden"
+  >
+
+    <div class="report-modal">
+
+      <div class="modal-header">
+
+        <h2>Report Question</h2>
+
+        <button
+          id="closeReportBtn"
+          class="close-modal-btn"
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <p>
+        Select the issue you found in this question.
+      </p>
+
+
+      <div class="report-options">
+
+        <label>
+          <input
+            type="radio"
+            name="reportReason"
+            value="incorrect-question"
+          />
+          Incorrect or incomplete question
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            name="reportReason"
+            value="incorrect-options"
+          />
+          Incorrect answer options
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            name="reportReason"
+            value="formatting"
+          />
+          Formatting or diagram issue
+        </label>
+
+        <label>
+          <input
