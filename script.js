@@ -1140,3 +1140,2573 @@ const questions = [
   }
 
 ];
+/* =========================================================
+   EXAM ENGINE — STATE
+========================================================= */
+
+let currentQuestionIndex = 0;
+let currentSubject = "Physics";
+let timeRemaining = EXAM_DURATION_SECONDS;
+let timerInterval = null;
+let examStartedAt = null;
+let testSubmitted = false;
+let toastTimer = null;
+
+const responses = Array(questions.length).fill(null);
+const statuses = Array(questions.length).fill("not-visited");
+const visitedQuestions = Array(questions.length).fill(false);
+const bookmarks = Array(questions.length).fill(false);
+
+/* =========================================================
+   HTML ELEMENT REFERENCES
+========================================================= */
+
+const getElement = (id) => document.getElementById(id);
+
+const loadingScreen = getElement("loadingScreen");
+const instructionsScreen = getElement("instructionsScreen");
+const startTestBtn = getElement("startTestBtn");
+const examApp = getElement("examApp");
+const resultScreen = getElement("resultScreen");
+
+const timerElement = getElement("timer");
+const mobileTimerElement = getElement("mobileTimer");
+
+const questionNumber = getElement("questionNumber");
+const questionType = getElement("questionType");
+const questionDifficulty = getElement("questionDifficulty");
+const chapterName = getElement("chapterName");
+const questionText = getElement("questionText");
+
+const questionImageContainer =
+  getElement("questionImageContainer");
+
+const questionImage = getElement("questionImage");
+const optionsContainer = getElement("options");
+
+const numericalAnswerBox =
+  getElement("numericalAnswerBox");
+
+const numericalInput = getElement("numericalInput");
+
+const previousBtn = getElement("previousBtn");
+const clearBtn = getElement("clearBtn");
+const reviewBtn = getElement("reviewBtn");
+const saveBtn = getElement("saveBtn");
+
+const bookmarkBtn = getElement("bookmarkBtn");
+const reportBtn = getElement("reportBtn");
+
+const questionPalette = getElement("questionPalette");
+const paletteSubjectName =
+  getElement("paletteSubjectName");
+
+const answeredCount = getElement("answeredCount");
+const notAnsweredCount =
+  getElement("notAnsweredCount");
+
+const reviewCount = getElement("reviewCount");
+const notVisitedCount =
+  getElement("notVisitedCount");
+
+const overallProgressText =
+  getElement("overallProgressText");
+
+const overallProgressBar =
+  getElement("overallProgressBar");
+
+const physicsProgress = getElement("physicsProgress");
+const chemistryProgress =
+  getElement("chemistryProgress");
+
+const mathematicsProgress =
+  getElement("mathematicsProgress");
+
+const submitBtn = getElement("submitBtn");
+const mobileSubmitBtn =
+  getElement("mobileSubmitBtn");
+
+const submitModal = getElement("submitModal");
+const cancelSubmitBtn =
+  getElement("cancelSubmitBtn");
+
+const confirmSubmitBtn =
+  getElement("confirmSubmitBtn");
+
+const modalAnsweredCount =
+  getElement("modalAnsweredCount");
+
+const modalUnansweredCount =
+  getElement("modalUnansweredCount");
+
+const modalReviewCount =
+  getElement("modalReviewCount");
+
+const calculatorBtn = getElement("calculatorBtn");
+const calculatorModal =
+  getElement("calculatorModal");
+
+const closeCalculatorBtn =
+  getElement("closeCalculatorBtn");
+
+const calculatorDisplay =
+  getElement("calculatorDisplay");
+
+const calculatorKeys =
+  getElement("calculatorKeys");
+
+const fullscreenBtn = getElement("fullscreenBtn");
+
+const reportModal = getElement("reportModal");
+const closeReportBtn =
+  getElement("closeReportBtn");
+
+const sendReportBtn = getElement("sendReportBtn");
+const reportComment = getElement("reportComment");
+
+const mobilePaletteBtn =
+  getElement("mobilePaletteBtn");
+
+const examSidebar = getElement("examSidebar");
+const closeSidebarBtn =
+  getElement("closeSidebarBtn");
+
+const toast = getElement("toast");
+const toastMessage = getElement("toastMessage");
+
+/* =========================================================
+   INITIALISE APPLICATION
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", initialiseApp);
+
+function initialiseApp() {
+  if (questions.length !== 75) {
+    console.warn(
+      `75 questions expected, but ${questions.length} found.`
+    );
+  }
+
+  attachBasicEvents();
+
+  window.setTimeout(() => {
+    loadingScreen?.classList.add("hidden");
+    instructionsScreen?.classList.remove("hidden");
+  }, 1200);
+}
+
+/* =========================================================
+   BASIC EVENT LISTENERS
+========================================================= */
+
+function attachBasicEvents() {
+  startTestBtn?.addEventListener(
+    "click",
+    startExamination
+  );
+
+  calculatorBtn?.addEventListener("click", () => {
+    calculatorModal?.classList.remove("hidden");
+  });
+
+  closeCalculatorBtn?.addEventListener("click", () => {
+    calculatorModal?.classList.add("hidden");
+  });
+
+  fullscreenBtn?.addEventListener(
+    "click",
+    toggleFullscreen
+  );
+
+  mobilePaletteBtn?.addEventListener("click", () => {
+    examSidebar?.classList.add("open");
+  });
+
+  closeSidebarBtn?.addEventListener("click", () => {
+    examSidebar?.classList.remove("open");
+  });
+}
+
+/* =========================================================
+   START EXAMINATION
+========================================================= */
+
+function startExamination() {
+  if (!questions.length) {
+    showToast("Question bank is empty.");
+    return;
+  }
+
+  instructionsScreen?.classList.add("hidden");
+  resultScreen?.classList.add("hidden");
+  examApp?.classList.remove("hidden");
+
+  currentQuestionIndex = 0;
+  currentSubject = questions[0].subject;
+
+  examStartedAt = Date.now();
+  testSubmitted = false;
+
+  visitedQuestions[0] = true;
+  statuses[0] = "not-answered";
+
+  startTimer();
+
+  /*
+    renderQuestion() Part 2 me banega.
+    Function available hone ke baad first question load hoga.
+  */
+  if (typeof renderQuestion === "function") {
+    renderQuestion();
+  }
+
+  showToast("Examination started. All the best!");
+}
+
+/* =========================================================
+   COUNTDOWN TIMER
+========================================================= */
+
+function startTimer() {
+  window.clearInterval(timerInterval);
+
+  updateTimerDisplay();
+
+  timerInterval = window.setInterval(() => {
+    timeRemaining -= 1;
+
+    if (timeRemaining <= 0) {
+      timeRemaining = 0;
+      updateTimerDisplay();
+
+      window.clearInterval(timerInterval);
+
+      showToast(
+        "Time is over. Test will be submitted automatically."
+      );
+
+      if (typeof submitTest === "function") {
+        submitTest(true);
+      }
+
+      return;
+    }
+
+    if (timeRemaining === 15 * 60) {
+      showToast("Only 15 minutes remaining.");
+    }
+
+    if (timeRemaining === 5 * 60) {
+      showToast("Only 5 minutes remaining.");
+    }
+
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const formattedTime = formatTime(timeRemaining);
+
+  if (timerElement) {
+    timerElement.textContent = formattedTime;
+  }
+
+  if (mobileTimerElement) {
+    mobileTimerElement.textContent = formattedTime;
+  }
+
+  const urgent = timeRemaining <= 5 * 60;
+
+  timerElement?.classList.toggle("urgent", urgent);
+  mobileTimerElement?.classList.toggle("urgent", urgent);
+}
+
+function formatTime(totalSeconds) {
+  const safeSeconds = Math.max(0, totalSeconds);
+
+  const hours
+   /* =========================================================
+   QUESTION ENGINE — EVENTS
+========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  attachQuestionEvents
+);
+
+function attachQuestionEvents() {
+  document
+    .querySelectorAll(".subject-tab")
+    .forEach((tab) => {
+      tab.addEventListener("click", () => {
+        switchSubject(tab.dataset.subject);
+      });
+    });
+
+  numericalInput?.addEventListener(
+    "input",
+    saveNumericalResponse
+  );
+
+  previousBtn?.addEventListener(
+    "click",
+    goToPreviousQuestion
+  );
+
+  clearBtn?.addEventListener(
+    "click",
+    clearCurrentResponse
+  );
+
+  saveBtn?.addEventListener(
+    "click",
+    saveAndNext
+  );
+
+  reviewBtn?.addEventListener(
+    "click",
+    markForReviewAndNext
+  );
+
+  bookmarkBtn?.addEventListener(
+    "click",
+    toggleBookmark
+  );
+}
+
+/* =========================================================
+   RENDER CURRENT QUESTION
+========================================================= */
+
+function renderQuestion() {
+  const question =
+    questions[currentQuestionIndex];
+
+  if (!question) {
+    showToast("Question could not be loaded.");
+    return;
+  }
+
+  currentSubject = question.subject;
+
+  visitedQuestions[currentQuestionIndex] =
+    true;
+
+  if (
+    statuses[currentQuestionIndex] ===
+    "not-visited"
+  ) {
+    statuses[currentQuestionIndex] =
+      "not-answered";
+  }
+
+  updateSubjectTabs();
+
+  if (questionNumber) {
+    const subjectQuestions =
+      getSubjectQuestionIndexes(
+        question.subject
+      );
+
+    const subjectPosition =
+      subjectQuestions.indexOf(
+        currentQuestionIndex
+      ) + 1;
+
+    questionNumber.textContent =
+      `Question ${subjectPosition}`;
+  }
+
+  if (questionType) {
+    questionType.textContent =
+      question.type;
+  }
+
+  if (questionDifficulty) {
+    questionDifficulty.textContent =
+      question.difficulty;
+
+    questionDifficulty.className =
+      `difficulty-badge ${question.difficulty.toLowerCase()}`;
+  }
+
+  if (chapterName) {
+    chapterName.textContent =
+      question.chapter;
+  }
+
+  if (questionText) {
+    questionText.textContent =
+      question.question;
+  }
+
+  renderQuestionImage(question);
+  renderAnswerArea(question);
+  updateBookmarkButton();
+  updateNavigationButtons();
+
+  if (
+    typeof renderQuestionPalette ===
+    "function"
+  ) {
+    renderQuestionPalette();
+  }
+
+  if (
+    typeof updateStatusSummary ===
+    "function"
+  ) {
+    updateStatusSummary();
+  }
+
+  closeMobileSidebar();
+}
+
+/* =========================================================
+   OPTIONAL QUESTION IMAGE
+========================================================= */
+
+function renderQuestionImage(question) {
+  if (
+    question.image &&
+    questionImage &&
+    questionImageContainer
+  ) {
+    questionImage.src =
+      question.image;
+
+    questionImage.alt =
+      question.imageAlt ||
+      "Question diagram";
+
+    questionImageContainer
+      .classList
+      .remove("hidden");
+
+    return;
+  }
+
+  if (questionImage) {
+    questionImage.src = "";
+  }
+
+  questionImageContainer
+    ?.classList
+    .add("hidden");
+}
+
+/* =========================================================
+   MCQ OR NUMERICAL ANSWER AREA
+========================================================= */
+
+function renderAnswerArea(question) {
+  optionsContainer.innerHTML = "";
+
+  if (
+    question.type ===
+    "Numerical Value"
+  ) {
+    optionsContainer
+      .classList
+      .add("hidden");
+
+    numericalAnswerBox
+      ?.classList
+      .remove("hidden");
+
+    numericalInput.value =
+      responses[
+        currentQuestionIndex
+      ] ?? "";
+
+    return;
+  }
+
+  optionsContainer
+    .classList
+    .remove("hidden");
+
+  numericalAnswerBox
+    ?.classList
+    .add("hidden");
+
+  question.options.forEach(
+    (option, optionIndex) => {
+      const optionButton =
+        document.createElement(
+          "button"
+        );
+
+      optionButton.type =
+        "button";
+
+      optionButton.className =
+        "option-btn";
+
+      if (
+        responses[
+          currentQuestionIndex
+        ] === optionIndex
+      ) {
+        optionButton.classList.add(
+          "selected"
+        );
+      }
+
+      const optionLetter =
+        String.fromCharCode(
+          65 + optionIndex
+        );
+
+      optionButton.innerHTML = `
+        <span class="option-letter">
+          ${optionLetter}
+        </span>
+
+        <span class="option-text"></span>
+      `;
+
+      optionButton
+        .querySelector(
+          ".option-text"
+        )
+        .textContent = option;
+
+      optionButton.addEventListener(
+        "click",
+        () => {
+          selectMCQOption(
+            optionIndex
+          );
+        }
+      );
+
+      optionsContainer.appendChild(
+        optionButton
+      );
+    }
+  );
+}
+
+/* =========================================================
+   SELECT MCQ OPTION
+========================================================= */
+
+function selectMCQOption(optionIndex) {
+  responses[currentQuestionIndex] =
+    optionIndex;
+
+  statuses[currentQuestionIndex] =
+    "answered";
+
+  renderAnswerArea(
+    questions[currentQuestionIndex]
+  );
+
+  if (
+    typeof renderQuestionPalette ===
+    "function"
+  ) {
+    renderQuestionPalette();
+  }
+
+  if (
+    typeof updateStatusSummary ===
+    "function"
+  ) {
+    updateStatusSummary();
+  }
+}
+
+/* =========================================================
+   SAVE NUMERICAL RESPONSE
+========================================================= */
+
+function saveNumericalResponse() {
+  const value =
+    numericalInput.value.trim();
+
+  responses[currentQuestionIndex] =
+    value === "" ? null : value;
+
+  statuses[currentQuestionIndex] =
+    value === ""
+      ? "not-answered"
+      : "answered";
+
+  if (
+    typeof renderQuestionPalette ===
+    "function"
+  ) {
+    renderQuestionPalette();
+  }
+
+  if (
+    typeof updateStatusSummary ===
+    "function"
+  ) {
+    updateStatusSummary();
+  }
+}
+
+/* =========================================================
+   SUBJECT SWITCHING
+========================================================= */
+
+function switchSubject(subject) {
+  const subjectIndexes =
+    getSubjectQuestionIndexes(
+      subject
+    );
+
+  if (!subjectIndexes.length) {
+    showToast(
+      `${subject} questions are unavailable.`
+    );
+    return;
+  }
+
+  currentSubject = subject;
+
+  const firstUnvisited =
+    subjectIndexes.find(
+      (index) =>
+        !visitedQuestions[index]
+    );
+
+  currentQuestionIndex =
+    firstUnvisited ??
+    subjectIndexes[0];
+
+  renderQuestion();
+}
+
+function getSubjectQuestionIndexes(
+  subject
+) {
+  return questions
+    .map((question, index) => ({
+      question,
+      index
+    }))
+    .filter(
+      (item) =>
+        item.question.subject ===
+        subject
+    )
+    .map((item) => item.index);
+}
+
+function updateSubjectTabs() {
+  document
+    .querySelectorAll(".subject-tab")
+    .forEach((tab) => {
+      tab.classList.toggle(
+        "active",
+        tab.dataset.subject ===
+          currentSubject
+      );
+    });
+
+  if (paletteSubjectName) {
+    paletteSubjectName.textContent =
+      currentSubject;
+  }
+}
+
+/* =========================================================
+   BOOKMARK
+========================================================= */
+
+function toggleBookmark() {
+  bookmarks[currentQuestionIndex] =
+    !bookmarks[
+      currentQuestionIndex
+    ];
+
+  updateBookmarkButton();
+
+  showToast(
+    bookmarks[currentQuestionIndex]
+      ? "Question bookmarked."
+      : "Bookmark removed."
+  );
+}
+
+function updateBookmarkButton() {
+  if (!bookmarkBtn) {
+    return;
+  }
+
+  const bookmarked =
+    bookmarks[
+      currentQuestionIndex
+    ];
+
+  bookmarkBtn.classList.toggle(
+    "active",
+    bookmarked
+  );
+
+  bookmarkBtn.textContent =
+    bookmarked
+      ? "♥ Bookmarked"
+      : "♡ Bookmark";
+}
+
+/* =========================================================
+   NAVIGATION BUTTON STATE
+========================================================= */
+
+function updateNavigationButtons() {
+  if (previousBtn) {
+    previousBtn.disabled =
+      currentQuestionIndex === 0;
+  }
+}
+
+/* =========================================================
+   MOBILE SIDEBAR
+========================================================= */
+
+function closeMobileSidebar() {
+  examSidebar
+    ?.classList
+    .remove("open");
+}
+   /* =========================================================
+   QUESTION NAVIGATION
+========================================================= */
+
+function goToPreviousQuestion() {
+  if (currentQuestionIndex <= 0) {
+    showToast("This is the first question.");
+    return;
+  }
+
+  currentQuestionIndex -= 1;
+  renderQuestion();
+}
+
+function saveAndNext() {
+  saveCurrentResponseStatus();
+  moveToNextQuestion();
+}
+
+function markForReviewAndNext() {
+  const response =
+    responses[currentQuestionIndex];
+
+  statuses[currentQuestionIndex] =
+    response === null ||
+    response === ""
+      ? "reviewed"
+      : "answered-reviewed";
+
+  moveToNextQuestion();
+}
+
+function clearCurrentResponse() {
+  responses[currentQuestionIndex] =
+    null;
+
+  statuses[currentQuestionIndex] =
+    "not-answered";
+
+  const question =
+    questions[currentQuestionIndex];
+
+  if (
+    question.type ===
+    "Numerical Value" &&
+    numericalInput
+  ) {
+    numericalInput.value = "";
+  }
+
+  renderAnswerArea(question);
+
+  if (
+    typeof renderQuestionPalette ===
+    "function"
+  ) {
+    renderQuestionPalette();
+  }
+
+  if (
+    typeof updateStatusSummary ===
+    "function"
+  ) {
+    updateStatusSummary();
+  }
+
+  showToast("Response cleared.");
+}
+
+function saveCurrentResponseStatus() {
+  const response =
+    responses[currentQuestionIndex];
+
+  if (
+    response === null ||
+    response === ""
+  ) {
+    statuses[currentQuestionIndex] =
+      "not-answered";
+  } else {
+    statuses[currentQuestionIndex] =
+      "answered";
+  }
+}
+
+/* =========================================================
+   MOVE TO NEXT QUESTION
+========================================================= */
+
+function moveToNextQuestion() {
+  if (
+    currentQuestionIndex <
+    questions.length - 1
+  ) {
+    currentQuestionIndex += 1;
+    renderQuestion();
+    return;
+  }
+
+  showToast(
+    "You have reached the last question."
+  );
+}
+
+/* =========================================================
+   GO TO QUESTION FROM PALETTE
+========================================================= */
+
+function goToQuestion(questionIndex) {
+  if (
+    questionIndex < 0 ||
+    questionIndex >=
+      questions.length
+  ) {
+    return;
+  }
+
+  currentQuestionIndex =
+    questionIndex;
+
+  renderQuestion();
+}
+
+/* =========================================================
+   QUESTION PALETTE
+========================================================= */
+
+function renderQuestionPalette() {
+  if (!questionPalette) {
+    return;
+  }
+
+  questionPalette.innerHTML = "";
+
+  const subjectIndexes =
+    getSubjectQuestionIndexes(
+      currentSubject
+    );
+
+  subjectIndexes.forEach(
+    (questionIndex, position) => {
+      const paletteButton =
+        document.createElement(
+          "button"
+        );
+
+      paletteButton.type =
+        "button";
+
+      paletteButton.textContent =
+        String(position + 1);
+
+      paletteButton.className =
+        "palette-btn";
+
+      const status =
+        statuses[questionIndex];
+
+      paletteButton.classList.add(
+        getPaletteStatusClass(
+          status
+        )
+      );
+
+      if (
+        questionIndex ===
+        currentQuestionIndex
+      ) {
+        paletteButton.classList.add(
+          "current"
+        );
+      }
+
+      if (
+        bookmarks[questionIndex]
+      ) {
+        paletteButton.classList.add(
+          "bookmarked"
+        );
+      }
+
+      paletteButton.addEventListener(
+        "click",
+        () => {
+          goToQuestion(
+            questionIndex
+          );
+        }
+      );
+
+      questionPalette.appendChild(
+        paletteButton
+      );
+    }
+  );
+}
+
+function getPaletteStatusClass(
+  status
+) {
+  const statusMap = {
+    "not-visited": "not-visited",
+    "not-answered": "not-answered",
+    answered: "answered",
+    reviewed: "reviewed",
+    "answered-reviewed":
+      "answered-reviewed"
+  };
+
+  return (
+    statusMap[status] ||
+    "not-visited"
+  );
+}
+
+/* =========================================================
+   STATUS SUMMARY
+========================================================= */
+
+function updateStatusSummary() {
+  const answered =
+    responses.filter(
+      (response) =>
+        response !== null &&
+        response !== ""
+    ).length;
+
+  const reviewed =
+    statuses.filter(
+      (status) =>
+        status === "reviewed" ||
+        status ===
+          "answered-reviewed"
+    ).length;
+
+  const unvisited =
+    visitedQuestions.filter(
+      (visited) => !visited
+    ).length;
+
+  const unanswered =
+    questions.length - answered;
+
+  if (answeredCount) {
+    answeredCount.textContent =
+      String(answered);
+  }
+
+  if (notAnsweredCount) {
+    notAnsweredCount.textContent =
+      String(unanswered);
+  }
+
+  if (reviewCount) {
+    reviewCount.textContent =
+      String(reviewed);
+  }
+
+  if (notVisitedCount) {
+    notVisitedCount.textContent =
+      String(unvisited);
+  }
+
+  updateProgressBars(answered);
+}
+
+/* =========================================================
+   PROGRESS COUNTERS
+========================================================= */
+
+function updateProgressBars(
+  answered
+) {
+  const percentage =
+    Math.round(
+      (
+        answered /
+        questions.length
+      ) * 100
+    );
+
+  if (overallProgressText) {
+    overallProgressText.textContent =
+      `${percentage}%`;
+  }
+
+  if (overallProgressBar) {
+    overallProgressBar.style.width =
+      `${percentage}%`;
+  }
+
+  updateSubjectProgress(
+    "Physics",
+    physicsProgress
+  );
+
+  updateSubjectProgress(
+    "Chemistry",
+    chemistryProgress
+  );
+
+  updateSubjectProgress(
+    "Mathematics",
+    mathematicsProgress
+  );
+}
+
+function updateSubjectProgress(
+  subject,
+  element
+) {
+  if (!element) {
+    return;
+  }
+
+  const subjectIndexes =
+    getSubjectQuestionIndexes(
+      subject
+    );
+
+  const attempted =
+    subjectIndexes.filter(
+      (index) =>
+        responses[index] !== null &&
+        responses[index] !== ""
+    ).length;
+
+  element.textContent =
+    `${attempted} / ${subjectIndexes.length}`;
+       }
+   /* =========================================================
+   RESULT ELEMENT REFERENCES
+========================================================= */
+
+const scoreValue = getElement("scoreValue");
+const maximumScore = getElement("maximumScore");
+
+const correctCount = getElement("correctCount");
+const wrongCount = getElement("wrongCount");
+const unattemptedCount = getElement("unattemptedCount");
+const accuracyValue = getElement("accuracyValue");
+
+const percentileValue = getElement("percentileValue");
+const rankValue = getElement("rankValue");
+
+const performanceMessage =
+  getElement("performanceMessage");
+
+const subjectAnalysis =
+  getElement("subjectAnalysis");
+
+const difficultyAnalysis =
+  getElement("difficultyAnalysis");
+
+const totalTimeUsed =
+  getElement("totalTimeUsed");
+
+const averageQuestionTime =
+  getElement("averageQuestionTime");
+
+const fastestSubject =
+  getElement("fastestSubject");
+
+const slowestSubject =
+  getElement("slowestSubject");
+
+const strongestChapter =
+  getElement("strongestChapter");
+
+const weakestChapter =
+  getElement("weakestChapter");
+
+const aiRecommendation =
+  getElement("aiRecommendation");
+
+const retakeTestBtn =
+  getElement("retakeTestBtn");
+
+const reviewAnswersBtn =
+  getElement("reviewAnswersBtn");
+
+const downloadResultBtn =
+  getElement("downloadResultBtn");
+
+/* =========================================================
+   SUBMIT AND RESULT EVENTS
+========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  attachSubmitEvents
+);
+
+function attachSubmitEvents() {
+  submitBtn?.addEventListener(
+    "click",
+    openSubmitModal
+  );
+
+  mobileSubmitBtn?.addEventListener(
+    "click",
+    openSubmitModal
+  );
+
+  cancelSubmitBtn?.addEventListener(
+    "click",
+    closeSubmitModal
+  );
+
+  confirmSubmitBtn?.addEventListener(
+    "click",
+    () => submitTest(false)
+  );
+
+  retakeTestBtn?.addEventListener(
+    "click",
+    resetAndRetakeTest
+  );
+
+  reviewAnswersBtn?.addEventListener(
+    "click",
+    reviewAttempt
+  );
+
+  downloadResultBtn?.addEventListener(
+    "click",
+    downloadScorecard
+  );
+}
+
+/* =========================================================
+   SUBMIT CONFIRMATION MODAL
+========================================================= */
+
+function openSubmitModal() {
+  const attempted =
+    responses.filter(
+      (response) =>
+        response !== null &&
+        response !== ""
+    ).length;
+
+  const reviewed =
+    statuses.filter(
+      (status) =>
+        status === "reviewed" ||
+        status === "answered-reviewed"
+    ).length;
+
+  const unanswered =
+    questions.length - attempted;
+
+  if (modalAnsweredCount) {
+    modalAnsweredCount.textContent =
+      String(attempted);
+  }
+
+  if (modalUnansweredCount) {
+    modalUnansweredCount.textContent =
+      String(unanswered);
+  }
+
+  if (modalReviewCount) {
+    modalReviewCount.textContent =
+      String(reviewed);
+  }
+
+  submitModal?.classList.remove("hidden");
+}
+
+function closeSubmitModal() {
+  submitModal?.classList.add("hidden");
+}
+
+/* =========================================================
+   FINAL SUBMISSION
+========================================================= */
+
+function submitTest(autoSubmitted = false) {
+  if (testSubmitted) {
+    return;
+  }
+
+  testSubmitted = true;
+
+  window.clearInterval(timerInterval);
+
+  closeSubmitModal();
+
+  const result =
+    calculateCompleteResult();
+
+  examApp?.classList.add("hidden");
+  instructionsScreen?.classList.add("hidden");
+  resultScreen?.classList.remove("hidden");
+
+  displayCompleteResult(result);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+  showToast(
+    autoSubmitted
+      ? "Time completed. Test submitted automatically."
+      : "Test submitted successfully."
+  );
+}
+
+/* =========================================================
+   SCORE CALCULATION
+========================================================= */
+
+function calculateCompleteResult() {
+  let correct = 0;
+  let wrong = 0;
+  let attempted = 0;
+  let score = 0;
+
+  const subjectData = {};
+  const difficultyData = {};
+  const chapterData = {};
+
+  SUBJECTS.forEach((subject) => {
+    subjectData[subject] = {
+      correct: 0,
+      wrong: 0,
+      attempted: 0,
+      total: 0,
+      score: 0
+    };
+  });
+
+  questions.forEach(
+    (question, index) => {
+      const response =
+        responses[index];
+
+      const wasAttempted =
+        response !== null &&
+        response !== "";
+
+      initialiseAnalysisGroup(
+        difficultyData,
+        question.difficulty
+      );
+
+      initialiseAnalysisGroup(
+        chapterData,
+        question.chapter
+      );
+
+      subjectData[
+        question.subject
+      ].total += 1;
+
+      difficultyData[
+        question.difficulty
+      ].total += 1;
+
+      chapterData[
+        question.chapter
+      ].total += 1;
+
+      if (!wasAttempted) {
+        return;
+      }
+
+      attempted += 1;
+
+      subjectData[
+        question.subject
+      ].attempted += 1;
+
+      difficultyData[
+        question.difficulty
+      ].attempted += 1;
+
+      chapterData[
+        question.chapter
+      ].attempted += 1;
+
+      const isCorrect =
+        checkAnswer(
+          question,
+          response
+        );
+
+      if (isCorrect) {
+        correct += 1;
+        score += MARKS_CORRECT;
+
+        subjectData[
+          question.subject
+        ].correct += 1;
+
+        subjectData[
+          question.subject
+        ].score += MARKS_CORRECT;
+
+        difficultyData[
+          question.difficulty
+        ].correct += 1;
+
+        chapterData[
+          question.chapter
+        ].correct += 1;
+      } else {
+        wrong += 1;
+
+        subjectData[
+          question.subject
+        ].wrong += 1;
+
+        difficultyData[
+          question.difficulty
+        ].wrong += 1;
+
+        chapterData[
+          question.chapter
+        ].wrong += 1;
+
+        const negativeMark =
+          question.type ===
+          "Numerical Value"
+            ? MARKS_WRONG_NUMERICAL
+            : MARKS_WRONG_MCQ;
+
+        score += negativeMark;
+
+        subjectData[
+          question.subject
+        ].score += negativeMark;
+      }
+    }
+  );
+
+  const unattempted =
+    questions.length - attempted;
+
+  const accuracy =
+    attempted > 0
+      ? Math.round(
+          (correct / attempted) * 100
+        )
+      : 0;
+
+  const maximumMarks =
+    questions.length *
+    MARKS_CORRECT;
+
+  const scorePercentage =
+    Math.max(
+      0,
+      Math.round(
+        (score / maximumMarks) * 100
+      )
+    );
+
+  const percentile =
+    estimatePercentile(
+      scorePercentage
+    );
+
+  const rank =
+    estimateRank(percentile);
+
+  const timeUsedSeconds =
+    Math.max(
+      0,
+      EXAM_DURATION_SECONDS -
+        timeRemaining
+    );
+
+  return {
+    correct,
+    wrong,
+    attempted,
+    unattempted,
+    score,
+    maximumMarks,
+    accuracy,
+    percentile,
+    rank,
+    timeUsedSeconds,
+    subjectData,
+    difficultyData,
+    chapterData
+  };
+}
+
+function initialiseAnalysisGroup(
+  object,
+  key
+) {
+  if (!object[key]) {
+    object[key] = {
+      correct: 0,
+      wrong: 0,
+      attempted: 0,
+      total: 0
+    };
+  }
+}
+
+/* =========================================================
+   ANSWER CHECKING
+========================================================= */
+
+function checkAnswer(
+  question,
+  response
+) {
+  if (
+    question.type ===
+    "Numerical Value"
+  ) {
+    const userAnswer =
+      normaliseNumericalAnswer(
+        response
+      );
+
+    const correctAnswer =
+      normaliseNumericalAnswer(
+        question.answer
+      );
+
+    return (
+      userAnswer !== null &&
+      correctAnswer !== null &&
+      Math.abs(
+        userAnswer -
+          correctAnswer
+      ) < 0.0001
+    );
+  }
+
+  return (
+    Number(response) ===
+    Number(question.answer)
+  );
+}
+
+function normaliseNumericalAnswer(
+  value
+) {
+  const number =
+    Number(
+      String(value)
+        .trim()
+        .replace(",", "")
+    );
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+}
+
+/* =========================================================
+   DISPLAY FINAL RESULT
+========================================================= */
+
+function displayCompleteResult(
+  result
+) {
+  if (scoreValue) {
+    scoreValue.textContent =
+      String(result.score);
+  }
+
+  if (maximumScore) {
+    maximumScore.textContent =
+      `/ ${result.maximumMarks}`;
+  }
+
+  if (correctCount) {
+    correctCount.textContent =
+      String(result.correct);
+  }
+
+  if (wrongCount) {
+    wrongCount.textContent =
+      String(result.wrong);
+  }
+
+  if (unattemptedCount) {
+    unattemptedCount.textContent =
+      String(result.unattempted);
+  }
+
+  if (accuracyValue) {
+    accuracyValue.textContent =
+      `${result.accuracy}%`;
+  }
+
+  if (percentileValue) {
+    percentileValue.textContent =
+      result.percentile.toFixed(2);
+  }
+
+  if (rankValue) {
+    rankValue.textContent =
+      formatRank(result.rank);
+  }
+
+  if (performanceMessage) {
+    performanceMessage.textContent =
+      getPerformanceMessage(
+        result
+      );
+  }
+
+  if (totalTimeUsed) {
+    totalTimeUsed.textContent =
+      formatTime(
+        result.timeUsedSeconds
+      );
+  }
+
+  if (averageQuestionTime) {
+    const averageSeconds =
+      result.attempted > 0
+        ? Math.round(
+            result.timeUsedSeconds /
+              result.attempted
+          )
+        : 0;
+
+    averageQuestionTime.textContent =
+      formatMinutesAndSeconds(
+        averageSeconds
+      );
+  }
+
+  renderSubjectAnalysis(
+    result.subjectData
+  );
+
+  renderDifficultyAnalysis(
+    result.difficultyData
+  );
+
+  renderChapterInsights(
+    result.chapterData
+  );
+
+  renderRecommendation(result);
+}
+
+/* =========================================================
+   PERCENTILE AND RANK ESTIMATION
+========================================================= */
+
+function estimatePercentile(
+  scorePercentage
+) {
+  if (scorePercentage >= 90) {
+    return 99.8;
+  }
+
+  if (scorePercentage >= 80) {
+    return 99.2;
+  }
+
+  if (scorePercentage >= 70) {
+    return 98.0;
+  }
+
+  if (scorePercentage >= 60) {
+    return 95.0;
+  }
+
+  if (scorePercentage >= 50) {
+    return 90.0;
+  }
+
+  if (scorePercentage >= 40) {
+    return 80.0;
+  }
+
+  if (scorePercentage >= 30) {
+    return 65.0;
+  }
+
+  if (scorePercentage >= 20) {
+    return 45.0;
+  }
+
+  return Math.max(
+    1,
+    scorePercentage * 1.5
+  );
+}
+
+function estimateRank(percentile) {
+  const assumedCandidates =
+    1400000;
+
+  return Math.max(
+    1,
+    Math.round(
+      assumedCandidates *
+        (100 - percentile) /
+        100
+    )
+  );
+}
+
+function formatRank(rank) {
+  return Number(rank)
+    .toLocaleString("en-IN");
+}
+   /* =========================================================
+   PERFORMANCE MESSAGE
+========================================================= */
+
+function getPerformanceMessage(result) {
+  const percentage =
+    Math.max(
+      0,
+      Math.round(
+        (result.score /
+          result.maximumMarks) *
+          100
+      )
+    );
+
+  if (percentage >= 85) {
+    return "Outstanding performance! Your concepts, accuracy and exam control are excellent.";
+  }
+
+  if (percentage >= 70) {
+    return "Very good attempt. A little more revision and error control can take your score higher.";
+  }
+
+  if (percentage >= 55) {
+    return "Good foundation. Improve weak chapters and reduce incorrect attempts.";
+  }
+
+  if (percentage >= 40) {
+    return "Your basics are developing. Focus on concept revision and regular timed practice.";
+  }
+
+  return "Start with concept strengthening, chapter-wise practice and careful question selection.";
+}
+
+/* =========================================================
+   SUBJECT-WISE RESULT
+========================================================= */
+
+function renderSubjectAnalysis(subjectData) {
+  if (!subjectAnalysis) {
+    return;
+  }
+
+  subjectAnalysis.innerHTML = "";
+
+  const subjectResults = [];
+
+  SUBJECTS.forEach((subject) => {
+    const data =
+      subjectData[subject];
+
+    const accuracy =
+      data.attempted > 0
+        ? Math.round(
+            (
+              data.correct /
+              data.attempted
+            ) * 100
+          )
+        : 0;
+
+    const maximumMarks =
+      data.total *
+      MARKS_CORRECT;
+
+    subjectResults.push({
+      subject,
+      accuracy,
+      score: data.score,
+      attempted: data.attempted,
+      correct: data.correct,
+      wrong: data.wrong
+    });
+
+    const row =
+      document.createElement("div");
+
+    row.className =
+      "subject-analysis-row";
+
+    row.innerHTML = `
+      <div class="subject-analysis-top">
+        <div>
+          <strong>${subject}</strong>
+          <span>
+            ${data.attempted}/${data.total} attempted
+          </span>
+        </div>
+
+        <div class="subject-score">
+          ${data.score}/${maximumMarks}
+        </div>
+      </div>
+
+      <div class="analysis-progress-track">
+        <span
+          class="analysis-progress-fill"
+          style="width: ${accuracy}%"
+        ></span>
+      </div>
+
+      <div class="subject-analysis-bottom">
+        <span>
+          Correct: ${data.correct}
+        </span>
+
+        <span>
+          Incorrect: ${data.wrong}
+        </span>
+
+        <strong>
+          ${accuracy}% accuracy
+        </strong>
+      </div>
+    `;
+
+    subjectAnalysis.appendChild(row);
+  });
+
+  updateStrongAndWeakSubjects(
+    subjectResults
+  );
+}
+
+function updateStrongAndWeakSubjects(
+  subjectResults
+) {
+  if (!subjectResults.length) {
+    return;
+  }
+
+  const sortedResults =
+    [...subjectResults].sort(
+      (a, b) => {
+        if (
+          b.accuracy !==
+          a.accuracy
+        ) {
+          return (
+            b.accuracy -
+            a.accuracy
+          );
+        }
+
+        return b.score - a.score;
+      }
+    );
+
+  const strongest =
+    sortedResults[0];
+
+  const weakest =
+    sortedResults[
+      sortedResults.length - 1
+    ];
+
+  if (fastestSubject) {
+    fastestSubject.textContent =
+      strongest.subject;
+  }
+
+  if (slowestSubject) {
+    slowestSubject.textContent =
+      weakest.subject;
+  }
+}
+
+/* =========================================================
+   DIFFICULTY-WISE RESULT
+========================================================= */
+
+function renderDifficultyAnalysis(
+  difficultyData
+) {
+  if (!difficultyAnalysis) {
+    return;
+  }
+
+  difficultyAnalysis.innerHTML = "";
+
+  const difficultyOrder = [
+    "Easy",
+    "Medium",
+    "Hard"
+  ];
+
+  difficultyOrder.forEach(
+    (difficulty) => {
+      const data =
+        difficultyData[
+          difficulty
+        ];
+
+      if (!data) {
+        return;
+      }
+
+      const accuracy =
+        data.attempted > 0
+          ? Math.round(
+              (
+                data.correct /
+                data.attempted
+              ) * 100
+            )
+          : 0;
+
+      const card =
+        document.createElement(
+          "div"
+        );
+
+      card.className =
+        `difficulty-result-card ${difficulty.toLowerCase()}`;
+
+      card.innerHTML = `
+        <div class="difficulty-result-header">
+          <strong>${difficulty}</strong>
+          <span>${accuracy}%</span>
+        </div>
+
+        <div class="analysis-progress-track">
+          <span
+            class="analysis-progress-fill"
+            style="width: ${accuracy}%"
+          ></span>
+        </div>
+
+        <div class="difficulty-result-details">
+          <span>
+            Attempted:
+            ${data.attempted}/${data.total}
+          </span>
+
+          <span>
+            Correct:
+            ${data.correct}
+          </span>
+
+          <span>
+            Incorrect:
+            ${data.wrong}
+          </span>
+        </div>
+      `;
+
+      difficultyAnalysis.appendChild(
+        card
+      );
+    }
+  );
+}
+
+/* =========================================================
+   CHAPTER INSIGHTS
+========================================================= */
+
+function renderChapterInsights(
+  chapterData
+) {
+  const chapterResults =
+    Object.entries(chapterData)
+      .filter(
+        ([, data]) =>
+          data.attempted > 0
+      )
+      .map(
+        ([chapter, data]) => {
+          const accuracy =
+            Math.round(
+              (
+                data.correct /
+                data.attempted
+              ) * 100
+            );
+
+          return {
+            chapter,
+            accuracy,
+            attempted:
+              data.attempted,
+            correct:
+              data.correct
+          };
+        }
+      );
+
+  if (!chapterResults.length) {
+    if (strongestChapter) {
+      strongestChapter.textContent =
+        "No attempted chapter";
+    }
+
+    if (weakestChapter) {
+      weakestChapter.textContent =
+        "No attempted chapter";
+    }
+
+    return;
+  }
+
+  const strongest =
+    [...chapterResults].sort(
+      (a, b) => {
+        if (
+          b.accuracy !==
+          a.accuracy
+        ) {
+          return (
+            b.accuracy -
+            a.accuracy
+          );
+        }
+
+        return (
+          b.attempted -
+          a.attempted
+        );
+      }
+    )[0];
+
+  const weakest =
+    [...chapterResults].sort(
+      (a, b) => {
+        if (
+          a.accuracy !==
+          b.accuracy
+        ) {
+          return (
+            a.accuracy -
+            b.accuracy
+          );
+        }
+
+        return (
+          b.attempted -
+          a.attempted
+        );
+      }
+    )[0];
+
+  if (strongestChapter) {
+    strongestChapter.textContent =
+      `${strongest.chapter} (${strongest.accuracy}%)`;
+  }
+
+  if (weakestChapter) {
+    weakestChapter.textContent =
+      `${weakest.chapter} (${weakest.accuracy}%)`;
+  }
+}
+
+/* =========================================================
+   MINUTES AND SECONDS FORMAT
+========================================================= */
+
+function formatMinutesAndSeconds(
+  totalSeconds
+) {
+  const safeSeconds =
+    Math.max(
+      0,
+      totalSeconds
+    );
+
+  const minutes =
+    Math.floor(
+      safeSeconds / 60
+    );
+
+  const seconds =
+    safeSeconds % 60;
+
+  return (
+    `${String(minutes).padStart(
+      2,
+      "0"
+    )}:` +
+    `${String(seconds).padStart(
+      2,
+      "0"
+    )}`
+  );
+     }
+   /* =========================================================
+   AI PERFORMANCE RECOMMENDATION
+========================================================= */
+
+function renderRecommendation(result) {
+  if (!aiRecommendation) {
+    return;
+  }
+
+  const percentage = Math.max(
+    0,
+    Math.round(
+      (result.score / result.maximumMarks) * 100
+    )
+  );
+
+  let recommendation = "";
+
+  if (percentage >= 85) {
+    recommendation =
+      "Excellent performance. Continue full-length timed mocks, revise your mistakes and focus on maintaining accuracy under pressure.";
+  } else if (percentage >= 70) {
+    recommendation =
+      "Your preparation is strong. Analyse incorrect questions, revise weak chapters and practise more medium and hard-level problems.";
+  } else if (percentage >= 55) {
+    recommendation =
+      "You have a good foundation. Improve question selection, reduce negative marking and revise the chapters where accuracy is low.";
+  } else if (percentage >= 40) {
+    recommendation =
+      "Focus on NCERT concepts, formula revision and chapter-wise practice before attempting more full syllabus mock tests.";
+  } else {
+    recommendation =
+      "Strengthen basic concepts first. Complete one chapter at a time, practise easy questions and gradually move towards timed mock tests.";
+  }
+
+  aiRecommendation.textContent =
+    recommendation;
+}
+
+/* =========================================================
+   RETAKE TEST
+========================================================= */
+
+function resetAndRetakeTest() {
+  window.clearInterval(timerInterval);
+
+  currentQuestionIndex = 0;
+  currentSubject = "Physics";
+  timeRemaining = EXAM_DURATION_SECONDS;
+  examStartedAt = null;
+  testSubmitted = false;
+
+  responses.fill(null);
+  statuses.fill("not-visited");
+  visitedQuestions.fill(false);
+  bookmarks.fill(false);
+
+  resultScreen?.classList.add("hidden");
+  examApp?.classList.add("hidden");
+  instructionsScreen?.classList.remove("hidden");
+
+  updateTimerDisplay();
+  updateStatusSummary();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+  showToast("Test has been reset.");
+}
+
+/* =========================================================
+   REVIEW ANSWERS
+========================================================= */
+
+function reviewAttempt() {
+  resultScreen?.classList.add("hidden");
+  examApp?.classList.remove("hidden");
+
+  testSubmitted = true;
+  currentQuestionIndex = 0;
+  currentSubject = questions[0].subject;
+
+  renderQuestion();
+
+  showToast(
+    "Review mode opened. Your submitted responses are preserved."
+  );
+}
+
+/* =========================================================
+   REPORT QUESTION
+========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  attachReportEvents
+);
+
+function attachReportEvents() {
+  reportBtn?.addEventListener("click", () => {
+    reportModal?.classList.remove("hidden");
+  });
+
+  closeReportBtn?.addEventListener("click", () => {
+    reportModal?.classList.add("hidden");
+  });
+
+  sendReportBtn?.addEventListener(
+    "click",
+    submitQuestionReport
+  );
+}
+
+function submitQuestionReport() {
+  const selectedReason =
+    document.querySelector(
+      'input[name="reportReason"]:checked'
+    );
+
+  if (!selectedReason) {
+    showToast(
+      "Please select a reason for reporting."
+    );
+    return;
+  }
+
+  const reportData = {
+    questionId:
+      questions[currentQuestionIndex]?.id,
+    reason: selectedReason.value,
+    comment:
+      reportComment?.value.trim() || ""
+  };
+
+  console.log(
+    "Question report:",
+    reportData
+  );
+
+  document
+    .querySelectorAll(
+      'input[name="reportReason"]'
+    )
+    .forEach((input) => {
+      input.checked = false;
+    });
+
+  if (reportComment) {
+    reportComment.value = "";
+  }
+
+  reportModal?.classList.add("hidden");
+
+  showToast(
+    "Question report submitted."
+  );
+}
+
+/* =========================================================
+   CALCULATOR
+========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  attachCalculatorEvents
+);
+
+function attachCalculatorEvents() {
+  calculatorKeys?.addEventListener(
+    "click",
+    handleCalculatorClick
+  );
+
+  calculatorModal?.addEventListener(
+    "click",
+    (event) => {
+      if (
+        event.target ===
+        calculatorModal
+      ) {
+        calculatorModal.classList.add(
+          "hidden"
+        );
+      }
+    }
+  );
+}
+
+function handleCalculatorClick(event) {
+  const button =
+    event.target.closest("button");
+
+  if (!button || !calculatorDisplay) {
+    return;
+  }
+
+  const value =
+    button.dataset.value;
+
+  if (!value) {
+    return;
+  }
+
+  if (value === "clear") {
+    calculatorDisplay.value = "0";
+    return;
+  }
+
+  if (value === "backspace") {
+    const current =
+      calculatorDisplay.value;
+
+    calculatorDisplay.value =
+      current.length > 1
+        ? current.slice(0, -1)
+        : "0";
+
+    return;
+  }
+
+  if (value === "calculate") {
+    calculateExpression();
+    return;
+  }
+
+  if (calculatorDisplay.value === "0") {
+    calculatorDisplay.value = value;
+  } else {
+    calculatorDisplay.value += value;
+  }
+}
+
+function calculateExpression() {
+  if (!calculatorDisplay) {
+    return;
+  }
+
+  try {
+    let expression =
+      calculatorDisplay.value;
+
+    expression = expression
+      .replaceAll("sqrt(", "Math.sqrt(")
+      .replaceAll("sin(", "Math.sin(")
+      .replaceAll("cos(", "Math.cos(")
+      .replaceAll("tan(", "Math.tan(");
+
+    const allowedExpression =
+      /^[0-9+\-*/().,\sA-Za-z]+$/;
+
+    if (
+      !allowedExpression.test(
+        expression
+      )
+    ) {
+      throw new Error(
+        "Invalid calculator expression"
+      );
+    }
+
+    const result = Function(
+      `"use strict"; return (${expression});`
+    )();
+
+    if (!Number.isFinite(result)) {
+      throw new Error(
+        "Invalid calculator result"
+      );
+    }
+
+    calculatorDisplay.value =
+      String(
+        Number(
+          Number(result).toFixed(10)
+        )
+      );
+  } catch (error) {
+    calculatorDisplay.value = "Error";
+  }
+}
+
+/* =========================================================
+   DOWNLOAD SCORECARD
+========================================================= */
+
+function downloadScorecard() {
+  const result =
+    calculateCompleteResult();
+
+  const subjectRows =
+    SUBJECTS.map((subject) => {
+      const data =
+        result.subjectData[subject];
+
+      const accuracy =
+        data.attempted > 0
+          ? Math.round(
+              (data.correct /
+                data.attempted) *
+                100
+            )
+          : 0;
+
+      return `
+        <tr>
+          <td>${subject}</td>
+          <td>${data.attempted}/${data.total}</td>
+          <td>${data.correct}</td>
+          <td>${data.wrong}</td>
+          <td>${data.score}</td>
+          <td>${accuracy}%</td>
+        </tr>
+      `;
+    }).join("");
+
+  const scorecardHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+      >
+      <title>JEEVerse Pro Scorecard</title>
+
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 32px;
+          color: #172033;
+        }
+
+        h1 {
+          margin-bottom: 4px;
+        }
+
+        .summary {
+          display: grid;
+          grid-template-columns:
+            repeat(4, 1fr);
+          gap: 12px;
+          margin: 28px 0;
+        }
+
+        .card {
+          border: 1px solid #dfe5ef;
+          border-radius: 12px;
+          padding: 16px;
+          text-align: center;
+        }
+
+        .card strong {
+          display: block;
+          font-size: 25px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 22px;
+        }
+
+        th,
+        td {
+          border: 1px solid #dfe5ef;
+          padding: 10px;
+          text-align: center;
+        }
+
+        th {
+          background: #f1f5f9;
+        }
+
+        .notice {
+          margin-top: 25px;
+          font-size: 13px;
+          color: #667085;
+        }
+
+        @media print {
+          button {
+            display: none;
+          }
+        }
+      </style>
+    </head>
+
+    <body>
+      <h1>JEEVerse Pro</h1>
+      <p>JEE Main Full Syllabus Mock Test Scorecard</p>
+
+      <div class="summary">
+        <div class="card">
+          <strong>
+            ${result.score}/${result.maximumMarks}
+          </strong>
+          Score
+        </div>
+
+        <div class="card">
+          <strong>${result.correct}</strong>
+          Correct
+        </div>
+
+        <div class="card">
+          <strong>${result.wrong}</strong>
+          Incorrect
+        </div>
+
+        <div class="card">
+          <strong>${result.accuracy}%</strong>
+          Accuracy
+        </div>
+      </div>
+
+      <p>
+        Estimated Percentile:
+        <strong>
+          ${result.percentile.toFixed(2)}
+        </strong>
+      </p>
+
+      <p>
+        Estimated Rank:
+        <strong>
+          ${formatRank(result.rank)}
+        </strong>
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Attempted</th>
+            <th>Correct</th>
+            <th>Incorrect</th>
+            <th>Score</th>
+            <th>Accuracy</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${subjectRows}
+        </tbody>
+      </table>
+
+      <div class="notice">
+        Estimated percentile and rank are mock-test indicators only.
+        They are not official NTA results.
+      </div>
+
+      <script>
+        window.onload = () => {
+          window.print();
+        };
+      <\/script>
+    </body>
+    </html>
+  `;
+
+  const scorecardWindow =
+    window.open("", "_blank");
+
+  if (!scorecardWindow) {
+    showToast(
+      "Allow pop-ups to download the scorecard."
+    );
+    return;
+  }
+
+  scorecardWindow.document.open();
+  scorecardWindow.document.write(
+    scorecardHTML
+  );
+  scorecardWindow.document.close();
+}
+
+/* =========================================================
+   MODAL BACKDROP CLOSING
+========================================================= */
+
+document.addEventListener(
+  "click",
+  (event) => {
+    if (event.target === submitModal) {
+      closeSubmitModal();
+    }
+
+    if (event.target === reportModal) {
+      reportModal.classList.add(
+        "hidden"
+      );
+    }
+  }
+);
+
+/* =========================================================
+   KEYBOARD SHORTCUTS
+========================================================= */
+
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (
+      examApp?.classList.contains(
+        "hidden"
+      )
+    ) {
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      goToPreviousQuestion();
+    }
+
+    if (event.key === "ArrowRight") {
+      saveAndNext();
+    }
+
+    if (
+      event.key === "Escape"
+    ) {
+      calculatorModal?.classList.add(
+        "hidden"
+      );
+
+      submitModal?.classList.add(
+        "hidden"
+      );
+
+      reportModal?.classList.add(
+        "hidden"
+      );
+    }
+  }
+);
